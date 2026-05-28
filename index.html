@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MCPC OX Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --red: #e63946;
+    --green: #3bb66f;
+    --amber: #f4a261;
+    --bg: #0d0d1a;
+    --bg2: #14142a;
+    --border: rgba(255,255,255,0.08);
+    --white: #ffffff;
+    --muted: rgba(255,255,255,0.45);
+    --dim: rgba(255,255,255,0.2);
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    font-family: 'Inter', 'Noto Sans KR', sans-serif;
+    color: var(--white);
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ─── Background pattern ─── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(230,57,70,0.08) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(59,182,111,0.06) 0%, transparent 50%),
+      repeating-linear-gradient(0deg, transparent, transparent 80px, rgba(255,255,255,0.015) 80px, rgba(255,255,255,0.015) 81px),
+      repeating-linear-gradient(90deg, transparent, transparent 80px, rgba(255,255,255,0.015) 80px, rgba(255,255,255,0.015) 81px);
+    pointer-events: none; z-index: 0;
+  }
+
+  #app {
+    position: relative; z-index: 1;
+    width: 100vw; height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 48px 80px;
+  }
+
+  /* ─── START SCREEN ─── */
+  .start-screen { text-align: center; }
+
+  .start-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px; letter-spacing: 6px;
+    color: var(--muted); margin-bottom: 24px;
+  }
+
+  .start-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 120px; line-height: 1;
+    color: var(--white); letter-spacing: 4px;
+    margin-bottom: 8px;
+  }
+
+  .start-subtitle {
+    font-size: 28px; color: var(--muted);
+    letter-spacing: 2px; margin-bottom: 48px;
+  }
+
+  .start-info {
+    font-size: 20px; color: var(--dim);
+    margin-bottom: 56px; line-height: 1.8;
+  }
+
+  .btn-start {
+    background: var(--red); color: #fff; border: none;
+    padding: 20px 72px; font-size: 26px; font-weight: 600;
+    border-radius: 60px; cursor: pointer; font-family: inherit;
+    letter-spacing: 1px;
+    box-shadow: 0 0 40px rgba(230,57,70,0.35);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .btn-start:hover { transform: scale(1.04); box-shadow: 0 0 60px rgba(230,57,70,0.5); }
+
+  /* ─── QUIZ SCREEN ─── */
+  .quiz-screen { width: 100%; max-width: 1400px; display: flex; flex-direction: column; gap: 32px; }
+
+  /* Top bar */
+  .top-bar { display: flex; align-items: center; justify-content: space-between; }
+
+  .q-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px; letter-spacing: 3px; color: var(--muted);
+  }
+
+  .mcpc-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px; letter-spacing: 6px; color: var(--dim);
+  }
+
+  /* Timer */
+  .timer-wrap { position: relative; width: 100px; height: 100px; }
+  .timer-svg { transform: rotate(-90deg); width: 100px; height: 100px; }
+  .timer-bg { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 7; }
+  .timer-bar { fill: none; stroke-width: 7; stroke-linecap: round; }
+  .timer-text {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 38px; color: var(--white);
+    letter-spacing: 1px;
+  }
+
+  /* Progress */
+  .progress-wrap { width: 100%; height: 5px; background: rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--red); border-radius: 10px; transition: width 0.5s ease; }
+
+  /* Question box */
+  .q-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 52px 64px;
+    min-height: 240px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 18px;
+    position: relative; overflow: hidden;
+  }
+  .q-box::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, transparent, var(--red), transparent);
+    opacity: 0.6;
+  }
+
+  .q-text-ko {
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 48px; font-weight: 700;
+    color: var(--white); text-align: center; line-height: 1.4;
+  }
+
+  .q-text-en {
+    font-size: 30px; font-weight: 400;
+    color: var(--muted); text-align: center; line-height: 1.5;
+    font-style: italic;
+  }
+
+  /* OX badges */
+  .ox-row { display: flex; gap: 48px; justify-content: center; }
+
+  .ox-badge {
+    width: 200px; height: 200px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 96px;
+    border: 4px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.03);
+    color: rgba(255,255,255,0.18);
+    transition: all 0.45s cubic-bezier(0.34,1.56,0.64,1);
+    flex-shrink: 0;
+  }
+  .ox-badge.correct-o {
+    background: rgba(59,182,111,0.2);
+    border-color: var(--green);
+    color: var(--green);
+    transform: scale(1.15);
+    box-shadow: 0 0 60px rgba(59,182,111,0.3);
+  }
+  .ox-badge.correct-x {
+    background: rgba(230,57,70,0.2);
+    border-color: var(--red);
+    color: var(--red);
+    transform: scale(1.15);
+    box-shadow: 0 0 60px rgba(230,57,70,0.3);
+  }
+
+  /* Answer banner */
+  .answer-banner {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 40px;
+    min-height: 88px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 6px;
+    transition: border-color 0.4s;
+  }
+  .answer-banner.show-o { border-color: rgba(59,182,111,0.4); }
+  .answer-banner.show-x { border-color: rgba(230,57,70,0.4); }
+
+  .ans-ko { font-size: 28px; font-weight: 700; color: var(--white); text-align: center; }
+  .ans-en { font-size: 22px; color: var(--muted); text-align: center; font-style: italic; }
+
+  /* Bottom row */
+  .bottom-row { display: flex; align-items: center; justify-content: space-between; }
+
+  .hint-key { font-size: 18px; color: var(--dim); }
+  .hint-key kbd {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 6px; padding: 4px 12px;
+    font-size: 16px; font-family: inherit;
+    color: var(--muted);
+  }
+
+  .btn-next {
+    background: rgba(255,255,255,0.08);
+    color: var(--white);
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 16px 48px;
+    font-size: 22px; font-weight: 600;
+    border-radius: 50px; cursor: pointer;
+    font-family: inherit; letter-spacing: 0.5px;
+    transition: background 0.2s, transform 0.1s, opacity 0.2s;
+  }
+  .btn-next:hover:not(:disabled) { background: rgba(255,255,255,0.14); transform: scale(1.03); }
+  .btn-next:disabled { opacity: 0.25; cursor: default; }
+
+  /* ─── END SCREEN ─── */
+  .end-screen { text-align: center; }
+  .end-icon { font-size: 96px; margin-bottom: 24px; animation: pop 0.6s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes pop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .end-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 96px; color: var(--white); line-height: 1; margin-bottom: 8px;
+  }
+  .end-sub { font-size: 28px; color: var(--muted); margin-bottom: 52px; }
+  .btn-restart {
+    background: var(--red); color: #fff; border: none;
+    padding: 18px 60px; font-size: 24px; font-weight: 600;
+    border-radius: 60px; cursor: pointer; font-family: inherit;
+    box-shadow: 0 0 40px rgba(230,57,70,0.3);
+    transition: transform 0.15s;
+  }
+  .btn-restart:hover { transform: scale(1.04); }
+
+  /* ─── Pulse animation on reveal ─── */
+  @keyframes pulse-green { 0%,100%{box-shadow:0 0 60px rgba(59,182,111,0.3)} 50%{box-shadow:0 0 90px rgba(59,182,111,0.55)} }
+  @keyframes pulse-red   { 0%,100%{box-shadow:0 0 60px rgba(230,57,70,0.3)}  50%{box-shadow:0 0 90px rgba(230,57,70,0.55)}  }
+  .correct-o { animation: pulse-green 2s ease-in-out infinite; }
+  .correct-x { animation: pulse-red   2s ease-in-out infinite; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- START -->
+  <div class="start-screen" id="startScreen">
+    <div class="start-logo">MULTICULTURAL PEOPLE'S CLUB</div>
+    <div class="start-title">OX QUIZ</div>
+    <div class="start-subtitle">퀴즈 게임</div>
+    <div class="start-info">
+      총 20문제 &nbsp;·&nbsp; 문제당 30초<br>
+      20 questions &nbsp;·&nbsp; 30 seconds each
+    </div>
+    <button class="btn-start" onclick="startQuiz()">시작하기 &nbsp;/&nbsp; Start</button>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="quiz-screen hidden" id="quizScreen">
+    <div class="top-bar">
+      <div class="q-num" id="qNum">1 / 20</div>
+      <div class="mcpc-label">MCPC OX QUIZ</div>
+      <div class="timer-wrap">
+        <svg class="timer-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <circle class="timer-bg" cx="50" cy="50" r="42"/>
+          <circle class="timer-bar" id="timerBar" cx="50" cy="50" r="42"
+            stroke-dasharray="263.9" stroke-dashoffset="0" stroke="#3bb66f"/>
+        </svg>
+        <div class="timer-text" id="timerText">30</div>
+      </div>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-fill" id="progressFill" style="width:5%"></div>
+    </div>
+
+    <div class="q-box">
+      <div class="q-text-ko" id="qTextKo"></div>
+      <div class="q-text-en" id="qTextEn"></div>
+    </div>
+
+    <div class="ox-row">
+      <div class="ox-badge" id="badgeO">O</div>
+      <div class="ox-badge" id="badgeX">X</div>
+    </div>
+
+    <div class="answer-banner" id="answerBanner">
+      <div class="ans-ko" id="ansKo">&nbsp;</div>
+      <div class="ans-en" id="ansEn">&nbsp;</div>
+    </div>
+
+    <div class="bottom-row">
+      <div class="hint-key">스페이스바 <kbd>Space</kbd> 로도 조작 가능</div>
+      <button class="btn-next" id="btnNext" onclick="nextQuestion()" disabled>
+        다음 문제 / Next &nbsp;→
+      </button>
+    </div>
+  </div>
+
+  <!-- END -->
+  <div class="end-screen hidden" id="endScreen">
+    <div class="end-icon">🎉</div>
+    <div class="end-title">퀴즈 완료!</div>
+    <div class="end-sub">수고하셨습니다 — Great job everyone!</div>
+    <button class="btn-restart" onclick="startQuiz()">처음부터 / Restart</button>
+  </div>
+
+</div>
+
+<script>
+const questions = [
+  { ko:"MCPC 회장 서진이는 2004년생이다.", en:"MCPC president Seojin was born in 2004.", ans:false, hintKo:"오답!", hintEn:"Incorrect!" },
+  { ko:"인체에서 가장 큰 기관은 피부이다.", en:"The largest organ in the human body is the skin.", ans:true, hintKo:"정답! 피부는 인체 최대 기관입니다.", hintEn:"Correct! The skin is the body's largest organ." },
+  { ko:"태양계에서 가장 큰 행성은 목성이다.", en:"The largest planet in the solar system is Jupiter.", ans:true, hintKo:"정답! 목성은 태양계 최대 행성입니다.", hintEn:"Correct! Jupiter is the largest planet." },
+  { ko:"MCPC 임원진 중 막내는 이은채다.", en:"The youngest MCPC executive member is Lee Eunchae.", ans:false, hintKo:"오답!", hintEn:"Incorrect!" },
+  { ko:"MCPC 약자는 Multi Cultural People's Club이다.", en:"MCPC stands for Multi Cultural People's Club.", ans:true, hintKo:"정답!", hintEn:"Correct!" },
+  { ko:"MCPC 동아리방은 433호이다.", en:"The MCPC club room is room 433.", ans:false, hintKo:"오답!", hintEn:"Incorrect!" },
+  { ko:"문어의 심장 수는 3개이다.", en:"An octopus has 3 hearts.", ans:true, hintKo:"정답! 문어는 심장이 3개입니다.", hintEn:"Correct! Octopuses have 3 hearts." },
+  { ko:"지구는 하루에 12번 자전한다.", en:"The Earth rotates 12 times a day.", ans:false, hintKo:"오답! 지구는 하루에 1번 자전합니다.", hintEn:"Incorrect! Earth rotates once a day." },
+  { ko:"노벨상은 7개 부문으로 시상한다.", en:"The Nobel Prize is awarded in 7 categories.", ans:false, hintKo:"오답! 노벨상은 6개 부문입니다.", hintEn:"Incorrect! There are 6 Nobel Prize categories." },
+  { ko:"BTS가 처음으로 빌보드 1위 한 곡은 'DNA'이다.", en:"BTS's first Billboard No.1 song was 'DNA'.", ans:false, hintKo:"오답! 첫 1위 곡은 '다이너마이트'입니다.", hintEn:"Incorrect! Their first No.1 was 'Dynamite'." },
+  { ko:"최초의 컴퓨터는 애니악(ENIAC)이다.", en:"The world's first computer was ENIAC.", ans:true, hintKo:"정답!", hintEn:"Correct!" },
+  { ko:"인간의 DNA는 바나나와 일부 유전자를 공유한다.", en:"Humans share some genes with bananas.", ans:true, hintKo:"정답! 약 60% 유전자를 공유합니다.", hintEn:"Correct! Humans share ~60% of genes with bananas." },
+  { ko:"올림픽이 처음 개최된 도시는 아테네이다.", en:"The first modern Olympics was held in Athens.", ans:true, hintKo:"정답! 1896년 아테네에서 시작됐습니다.", hintEn:"Correct! The first modern Olympics was Athens, 1896." },
+  { ko:"새우의 심장은 머리에 있다.", en:"A shrimp's heart is located in its head.", ans:true, hintKo:"정답! 새우 심장은 머리 쪽에 있습니다.", hintEn:"Correct! A shrimp's heart is in its head." },
+  { ko:"MCPC 임원진 장성현(JAY)는 25년 2학기부터 임원진이었다.", en:"MCPC executive Jang Sunghyun (JAY) joined the board in the 2nd semester of 2025.", ans:false, hintKo:"오답!", hintEn:"Incorrect!" },
+  { ko:"지도에서 가장 많은 나라와 접한 나라는 중국이다.", en:"China borders the most countries in the world.", ans:false, hintKo:"오답! 러시아가 14개국으로 1위입니다.", hintEn:"Incorrect! Russia borders 14 countries — the most." },
+  { ko:"한양대 ERICA는 'Engineering Research Industry Cluster Ansan'의 약자이다.", en:"Hanyang ERICA stands for 'Engineering Research Industry Cluster Ansan'.", ans:false, hintKo:"오답!", hintEn:"Incorrect!" },
+  { ko:"한양대 ERICA 축제 명칭은 'ESPRESO'이다.", en:"The name of Hanyang ERICA's festival is 'ESPRESO'.", ans:false, hintKo:"오답!", hintEn:"Incorrect!" },
+  { ko:"모든 거미는 거미줄을 만든다.", en:"All spiders spin webs.", ans:false, hintKo:"오답! 일부 거미는 거미줄을 만들지 않습니다.", hintEn:"Incorrect! Some spiders don't spin webs." },
+  { ko:"임원진 중에서 안 온 인원은 총 3명이다.", en:"A total of 3 executive members are absent today.", ans:false, hintKo:"오답!", hintEn:"Incorrect!" },
+];
+
+const CIRC = 2 * Math.PI * 42;
+let current = 0, timeLeft = 30, timerInterval = null, revealed = false;
+
+function $(id){ return document.getElementById(id); }
+
+function startQuiz(){
+  current = 0;
+  $('startScreen').classList.add('hidden');
+  $('endScreen').classList.add('hidden');
+  $('quizScreen').classList.remove('hidden');
+  loadQuestion();
+}
+
+function loadQuestion(){
+  revealed = false;
+  timeLeft = 30;
+  const q = questions[current];
+
+  $('qNum').textContent = (current+1) + ' / ' + questions.length;
+  $('qTextKo').textContent = q.ko;
+  $('qTextEn').textContent = q.en;
+  $('progressFill').style.width = ((current+1)/questions.length*100) + '%';
+  $('ansKo').innerHTML = '&nbsp;';
+  $('ansEn').innerHTML = '&nbsp;';
+  $('answerBanner').className = 'answer-banner';
+  $('badgeO').className = 'ox-badge';
+  $('badgeX').className = 'ox-badge';
+  $('btnNext').disabled = true;
+
+  const bar = $('timerBar');
+  bar.style.transition = 'none';
+  bar.style.strokeDashoffset = '0';
+  bar.style.stroke = '#3bb66f';
+  $('timerText').textContent = '30';
+
+  clearInterval(timerInterval);
+  setTimeout(()=>{
+    bar.style.transition = 'stroke-dashoffset 0.95s linear, stroke 0.4s';
+    timerInterval = setInterval(tick, 1000);
+  }, 80);
+}
+
+function tick(){
+  timeLeft--;
+  const bar = $('timerBar');
+  const pct = timeLeft / 30;
+  bar.style.strokeDashoffset = CIRC * (1 - pct);
+  bar.style.stroke = timeLeft > 10 ? '#3bb66f' : timeLeft > 5 ? '#f4a261' : '#e63946';
+  $('timerText').textContent = timeLeft;
+  if(timeLeft <= 0){ clearInterval(timerInterval); revealAnswer(); }
+}
+
+function revealAnswer(){
+  if(revealed) return;
+  revealed = true;
+  clearInterval(timerInterval);
+  const q = questions[current];
+  const banner = $('answerBanner');
+
+  if(q.ans){
+    $('badgeO').className = 'ox-badge correct-o';
+    banner.className = 'answer-banner show-o';
+  } else {
+    $('badgeX').className = 'ox-badge correct-x';
+    banner.className = 'answer-banner show-x';
+  }
+
+  $('ansKo').textContent = (q.ans ? '✅ O 정답' : '❌ X 정답') + ' — ' + q.hintKo;
+  $('ansEn').textContent = (q.ans ? '✅ True' : '❌ False') + ' — ' + q.hintEn;
+  $('btnNext').disabled = false;
+}
+
+function nextQuestion(){
+  if(!revealed) revealAnswer();
+  current++;
+  if(current >= questions.length){
+    $('quizScreen').classList.add('hidden');
+    $('endScreen').classList.remove('hidden');
+  } else {
+    loadQuestion();
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if(e.code === 'Space'){
+    e.preventDefault();
+    if(!$('quizScreen').classList.contains('hidden')){
+      if(!revealed) revealAnswer();
+      else if(!$('btnNext').disabled) nextQuestion();
+    } else if(!$('startScreen').classList.contains('hidden')){
+      startQuiz();
+    }
+  }
+});
+</script>
+</body>
+</html>
